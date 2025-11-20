@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trucking Target Price Calculator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .input-group:focus-within i {
+            color: #2563eb;
+        }
+
+        .input-group:focus-within label {
+            color: #2563eb;
+        }
+
+        .input-group:focus-within input {
+            border-color: #2563eb;
+            ring: 2px;
+        }
+
+        /* Badge styles for numbering */
+        .tab-badge {
+            background-color: #e2e8f0;
+            color: #475569;
+            font-size: 0.75rem;
+            padding: 2px 8px;
+            border-radius: 9999px;
+            margin-right: 8px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-blue-600 text-white p-2 rounded-lg">
+                    <i class="fas fa-truck-moving text-xl"></i>
+                </div>
+                <h1 class="text-xl font-bold text-slate-900">Trip Price Calculator</h1>
+            </div>
+            <button onclick="printReport()"
+                class="hidden sm:flex items-center space-x-2 text-sm font-medium text-slate-600 hover:text-blue-600 transition">
+                <i class="fas fa-print"></i>
+                <span>Print Report</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+            <!-- Input Section -->
+            <div class="lg:col-span-7 space-y-6">
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                    <h2 class="text-lg font-semibold mb-6 flex items-center border-b pb-4">
+                        <i class="fas fa-calculator text-blue-500 mr-2"></i> Inputs
+                    </h2>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                        <!-- Tab 1: Distance -->
+                        <div class="input-group">
+                            <label class="block text-sm font-medium text-slate-600 mb-1"><span
+                                    class="tab-badge">1</span>Distance per Trip (Km/Miles)</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i class="fas fa-road text-slate-400 transition-colors"></i>
+                                </div>
+                                <input type="number" id="distance"
+                                    class="pl-10 block w-full rounded-lg border-slate-300 border bg-slate-50 p-2.5 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all"
+                                    placeholder="e.g. 500" oninput="calculate()">
+                            </div>
+                        </div>
+
+                        <!-- Tab 2: No of Trips -->
+                        <div class="input-group">
+                            <label class="block text-sm font-medium text-slate-600 mb-1"><span
+                                    class="tab-badge">2</span>Number of Trips</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i class="fas fa-route text-slate-400 transition-colors"></i>
+                                </div>
+                                <input type="number" id="trips" value="26"
+                                    class="pl-10 block w-full rounded-lg border-slate-300 border bg-slate-50 p-2.5 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all"
+                                    placeholder="e.g. 26" oninput="calculate()">
+                            </div>
+                        </div>
+
+                        <div class="col-span-1 md:col-span-2 h-px bg-slate-100"></div>
+
+                        <!-- Tab 3: Fuel Cost (Calculated) -->
+                        <div class="input-group md:col-span-2">
+                            <label class="block text-sm font-medium text-slate-600 mb-1"><span
+                                    class="tab-badge">3</span>Calculated Fuel Cost</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i class="fas fa-gas-pump text-orange-400 transition-colors"></i>
+                                </div>
+                                <input type="text" id="fuel" readonly
+                                    class="pl-10 block w-full rounded-lg border-orange-200 border bg-orange-50 p-2.5 font-semibold text-slate-700 focus:outline-none cursor-not-allowed"
+                                    placeholder="Calculated automatically...">
+                            </div>
+                            <p class="text-xs text-slate-400 mt-1">Formula: (Distance × Trips × 1.44 ÷ 1.8)</p>
+                        </div>
+
+                        <!-- Tab 4: Rent -->
+                        <div class="input-group">
+                            <label class="block text-sm font-medium text-slate-600 mb-1"><span
+                                    class="tab-badge">4</span>Monthly Rent/EMI</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i class="fas fa-file-invoice-dollar text-slate-400 transition-colors"></i>
+                                </div>
+                                <input type="number" id="rent" value="10000"
+                                    class="pl-10 block w-full rounded-lg border-slate-300 border bg-slate-50 p-2.5 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all"
+                                    oninput="calculate()">
+                            </div>
+                        </div>
+
+                        <!-- Tab 5: Maintenance -->
+                        <div class="input-group">
+                            <label class="block text-sm font-medium text-slate-600 mb-1"><span
+                                    class="tab-badge">5</span>Maintenance</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i class="fas fa-tools text-slate-400 transition-colors"></i>
+                                </div>
+                                <input type="number" id="maintenance" value="800"
+                                    class="pl-10 block w-full rounded-lg border-slate-300 border bg-slate-50 p-2.5 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all"
+                                    oninput="calculate()">
+                            </div>
+                        </div>
+
+                        <!-- Tab 6: Other Expenses -->
+                        <div class="input-group md:col-span-2">
+                            <label class="block text-sm font-medium text-slate-600 mb-1"><span
+                                    class="tab-badge">6</span>Other Expenses</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i class="fas fa-receipt text-slate-400 transition-colors"></i>
+                                </div>
+                                <input type="number" id="other" value="0"
+                                    class="pl-10 block w-full rounded-lg border-slate-300 border bg-slate-50 p-2.5 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all"
+                                    oninput="calculate()">
+                            </div>
+                        </div>
+
+                        <div class="col-span-1 md:col-span-2 h-px bg-slate-100 my-2"></div>
+
+                        <!-- Tab 7: Profit -->
+                        <div class="input-group md:col-span-2 bg-purple-50 p-4 rounded-xl border border-purple-100">
+                            <label class="block text-sm font-bold text-purple-700 mb-1"><span
+                                    class="tab-badge bg-purple-200 text-purple-800">7</span>Required Monthly
+                                Profit</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i class="fas fa-sack-dollar text-purple-500 transition-colors"></i>
+                                </div>
+                                <input type="number" id="profit" value="9000"
+                                    class="pl-10 block w-full rounded-lg border-purple-300 border bg-white p-3 focus:outline-none focus:ring-2 focus:ring-purple-200 transition-all text-purple-800 font-bold text-lg"
+                                    oninput="calculate()">
+                            </div>
+                            <p class="text-xs text-purple-400 mt-1">Adjust this to change your target margin.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Section -->
+            <div class="lg:col-span-5 space-y-6">
+
+                <!-- Main Result Card -->
+                <div
+                    class="bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl shadow-lg p-6 text-white relative overflow-hidden">
+                    <div class="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-white opacity-5 rounded-full blur-xl">
+                    </div>
+                    <h3 class="text-slate-300 text-sm font-medium uppercase tracking-wider mb-1">Targeted Price Per Trip
+                    </h3>
+                    <div class="flex items-baseline">
+                        <span class="text-4xl font-bold text-emerald-400" id="resultPrice">0.00</span>
+                        <span class="ml-2 text-slate-400 text-sm">/ trip</span>
+                    </div>
+
+                    <div class="mt-6 pt-6 border-t border-white/10 grid grid-cols-2 gap-4">
+                        <div>
+                            <p class="text-slate-400 text-xs">Total Revenue Target</p>
+                            <p class="text-lg font-semibold" id="resultTotalRevenue">0.00</p>
+                        </div>
+                        <div>
+                            <p class="text-slate-400 text-xs">Total Expenses</p>
+                            <p class="text-lg font-semibold" id="summaryExpenses">0.00</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cost Breakdown -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                    <h3 class="text-lg font-semibold mb-4 text-slate-800">Cost Distribution</h3>
+
+                    <div class="flex justify-center h-48 mb-4">
+                        <canvas id="costChart"></canvas>
+                    </div>
+
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-center text-sm p-2 bg-slate-50 rounded">
+                            <span class="text-slate-600">Fuel (Calc)</span>
+                            <span class="font-bold text-slate-700" id="summaryFuel">0.00</span>
+                        </div>
+                        <div class="flex justify-between items-center text-sm p-2 bg-slate-50 rounded">
+                            <span class="text-slate-600">Rent</span>
+                            <span class="font-bold text-slate-700" id="summaryRent">0.00</span>
+                        </div>
+                        <div
+                            class="flex justify-between items-center text-sm p-2 bg-purple-50 rounded border border-purple-100">
+                            <span class="text-purple-700 font-medium">Target Profit</span>
+                            <span class="font-bold text-purple-700" id="summaryProfit">0.00</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex gap-3">
+                    <button onclick="resetForm()"
+                        class="flex-1 py-3 border border-slate-300 text-slate-600 rounded-lg hover:bg-slate-50 font-medium transition">
+                        Reset
+                    </button>
+                    <button onclick="copyResult()"
+                        class="flex-1 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition shadow-lg shadow-blue-200">
+                        Copy Target Price
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <script>
+        let myChart = null;
+
+        // Utility function to get float value safely
+        const getVal = (id) => {
+            const val = parseFloat(document.getElementById(id).value);
+            return isNaN(val) ? 0 : val;
+        };
+
+        // Format currency
+        const formatCurrency = (num) => {
+            return new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(num);
+        };
+
+        function calculate() {
+            // Get Inputs
+            const distance = getVal('distance'); // Tab 1
+            const trips = getVal('trips');       // Tab 2
+
+            // Calculate Fuel (Tab 3)
+            // Formula: Distance * Trips * 1.44 / 1.8
+            let fuelCost = 0;
+            if (distance > 0 && trips > 0) {
+                fuelCost = (distance * trips * 1.44) / 1.8;
+            }
+
+            // Update Fuel Input field visually
+            document.getElementById('fuel').value = fuelCost.toFixed(2);
+
+            const rent = getVal('rent');               // Tab 4
+            const maintenance = getVal('maintenance'); // Tab 5
+            const other = getVal('other');             // Tab 6
+            const profit = getVal('profit');           // Tab 7
+
+            // Calculations for Target Price
+            // (Tab 3 + Tab 4 + Tab 5 + Tab 6 + Tab 7) / Tab 2
+            const totalTargetRevenue = fuelCost + rent + maintenance + other + profit;
+            const totalExpenses = fuelCost + rent + maintenance + other;
+
+            let targetPricePerTrip = 0;
+            if (trips > 0) {
+                targetPricePerTrip = totalTargetRevenue / trips;
+            }
+
+            // Update UI Results
+            document.getElementById('resultPrice').innerText = formatCurrency(targetPricePerTrip);
+            document.getElementById('resultTotalRevenue').innerText = formatCurrency(totalTargetRevenue);
+
+            document.getElementById('summaryExpenses').innerText = formatCurrency(totalExpenses);
+            document.getElementById('summaryFuel').innerText = formatCurrency(fuelCost);
+            document.getElementById('summaryRent').innerText = formatCurrency(rent);
+            document.getElementById('summaryProfit').innerText = formatCurrency(profit);
+
+            // Update Chart
+            updateChart(rent, maintenance, fuelCost, other, profit);
+        }
+
+        function updateChart(rent, maintenance, fuel, other, profit) {
+            const ctx = document.getElementById('costChart').getContext('2d');
+
+            // Don't show chart if everything is zero
+            if (rent + maintenance + fuel + other + profit === 0) {
+                if (myChart) {
+                    myChart.data.datasets[0].data = [1];
+                    myChart.data.labels = ['No Data'];
+                    myChart.data.datasets[0].backgroundColor = ['#e2e8f0'];
+                    myChart.update();
+                }
+                return;
+            }
+
+            const data = [rent, maintenance, fuel, other, profit];
+            const labels = ['Rent', 'Maintenance', 'Fuel', 'Other', 'Profit'];
+            const colors = ['#3b82f6', '#f59e0b', '#f97316', '#94a3b8', '#a855f7'];
+
+            if (myChart) {
+                myChart.data.datasets[0].data = data;
+                myChart.data.labels = labels;
+                myChart.data.datasets[0].backgroundColor = colors;
+                myChart.update();
+            } else {
+                myChart = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            data: data,
+                            backgroundColor: colors,
+                            borderWidth: 0,
+                            hoverOffset: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'right',
+                                labels: {
+                                    boxWidth: 12,
+                                    font: { size: 11 }
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function (context) {
+                                        let label = context.label || '';
+                                        if (label) { label += ': '; }
+                                        if (context.parsed !== null) {
+                                            label += new Intl.NumberFormat('en-US', { minimumFractionDigits: 2 }).format(context.parsed);
+                                        }
+                                        return label;
+                                    }
+                                }
+                            }
+                        },
+                        cutout: '65%'
+                    }
+                });
+            }
+        }
+
+        function zeroOutResults() {
+            // Manually set all result displays to zero
+            document.getElementById('resultPrice').innerText = '0.00';
+            document.getElementById('resultTotalRevenue').innerText = '0.00';
+            document.getElementById('summaryExpenses').innerText = '0.00';
+            document.getElementById('summaryFuel').innerText = '0.00';
+            document.getElementById('summaryRent').innerText = '0.00';
+            document.getElementById('summaryProfit').innerText = '0.00';
+            document.getElementById('fuel').value = '0.00';
+
+            // Initialize empty chart
+            updateChart(0, 0, 0, 0, 0);
+        }
+
+        function resetForm() {
+            // Reset specific inputs to defaults, others to empty
+            document.getElementById('distance').value = '';
+            document.getElementById('trips').value = '26';
+            document.getElementById('rent').value = '10000';
+            document.getElementById('maintenance').value = '800';
+            document.getElementById('other').value = '0';
+            document.getElementById('profit').value = '9000';
+
+            // Instead of calculating immediately, we zero out results
+            zeroOutResults();
+        }
+
+        function copyResult() {
+            const val = document.getElementById('resultPrice').innerText;
+            const textToCopy = `Target Price Per Trip: ${val}`;
+
+            const tempInput = document.createElement("input");
+            tempInput.value = textToCopy;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand("copy");
+            document.body.removeChild(tempInput);
+
+            // Visual Feedback
+            const btn = document.querySelector('button[onclick="copyResult()"]');
+            const originalText = btn.innerText;
+            btn.innerText = "Copied!";
+            btn.classList.add('bg-emerald-600');
+            setTimeout(() => {
+                btn.innerText = originalText;
+                btn.classList.remove('bg-emerald-600');
+            }, 2000);
+        }
+
+        function printReport() {
+            window.print();
+        }
+
+        // Initialize
+        window.onload = function () {
+            // Start with zeros
+            zeroOutResults();
+        }
+
+    </script>
+</body>
+
+</html>
